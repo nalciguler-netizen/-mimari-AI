@@ -1,132 +1,152 @@
-const state = {
-  imageBase64: null,
-  selectedStyle: null,
-};
-
 const $ = (id) => document.getElementById(id);
 
-function getApiKey() { return localStorage.getItem("replicate_key") || ""; }
-function setApiKey(k) { localStorage.setItem("replicate_key", k); }
+const roomCanvas = $("roomCanvas");
+const ctx = roomCanvas.getContext("2d");
 
-$("apiKeyBtn").addEventListener("click", () => {
-  $("apiInput").value = getApiKey();
-  $("apiDialog").showModal();
-});
-$("apiSaveBtn").addEventListener("click", () => {
-  const val = $("apiInput").value.trim();
-  if (val) setApiKey(val);
-});
+let bgImage = null;
+let items = []; // Odadaki sürüklenebilir eşyalar
+let selectedItem = null;
+let isDragging = false;
+let dragStartX, dragStartY;
 
-const grid = $("styleGrid");
-window.STYLES.forEach((s) => {
-  const btn = document.createElement("button");
-  btn.className = "style-chip";
-  btn.textContent = s.label;
-  btn.dataset.id = s.id;
-  btn.addEventListener("click", () => {
-    document.querySelectorAll(".style-chip").forEach((c) => c.classList.remove("selected"));
-    btn.classList.add("selected");
-    state.selectedStyle = s;
-  });
-  grid.appendChild(btn);
-});
-
+// 1. Fotoğraf Yükleme ve Tuvali Başlatma
 $("uploadBox").addEventListener("click", () => $("fileInput").click());
 
-$("fileInput").addEventListener("change", async (e) => {
+$("fileInput").addEventListener("change", (e) => {
   const file = e.target.files[0];
   if (!file) return;
-  const base64 = await fileToResizedBase64(file, 1024, 0.85);
-  state.imageBase64 = base64;
-  const preview = $("preview");
-  preview.src = `data:image/jpeg;base64,${base64}`;
-  preview.hidden = false;
-  $("uploadHint").hidden = true;
+
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    bgImage = new Image();
+    bgImage.onload = () => {
+      initCanvas();
+      $("canvasSection").hidden = false;
+      $("actionSection").hidden = false;
+      $("canvasSection").scrollIntoView({ behavior: "smooth" });
+    };
+    bgImage.src = event.target.result;
+  };
+  reader.readAsDataURL(file);
 });
 
-function fileToResizedBase64(file, maxDim, quality) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const img = new Image();
-      img.onload = () => {
-        const bigger = Math.max(img.width, img.height);
-        const scale = bigger > maxDim ? maxDim / bigger : 1;
-        const w = Math.round(img.width * scale);
-        const h = Math.round(img.height * scale);
-        const canvas = document.createElement("canvas");
-        canvas.width = w;
-        canvas.height = h;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, w, h);
-        const dataUrl = canvas.toDataURL("image/jpeg", quality);
-        resolve(dataUrl.split(",")[1]);
-      };
-      img.onerror = reject;
-      img.src = reader.result;
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
+function initCanvas() {
+  const containerWidth = roomCanvas.parentElement.clientWidth;
+  const scale = containerWidth / bgImage.width;
+  
+  roomCanvas.width = containerWidth;
+  roomCanvas.height = bgImage.height * scale;
+
+  render();
+}
+
+// Canvas Çizim Döngüsü
+function render() {
+  ctx.clearRect(0, 0, roomCanvas.width, roomCanvas.height);
+  
+  // Arka Plan Odasını Çiz
+  if (bgImage) {
+    ctx.drawImage(bgImage, 0, 0, roomCanvas.width, roomCanvas.height);
+  }
+
+  // Eşyaları Çiz
+  items.forEach((item) => {
+    ctx.save();
+    if (item === selectedItem) {
+      ctx.strokeStyle = "#8B6B4A";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(item.x - 2, item.y - 2, item.w + 4, item.h + 4);
+    }
+    ctx.drawImage(item.img, item.x, item.y, item.w, item.h);
+    ctx.restore();
   });
 }
 
-$("generateBtn").addEventListener("click", async () => {
-  const apiKey = getApiKey();
-  if (!apiKey) {
-    $("apiInput").value = "";
-    $("apiDialog").showModal();
-    return;
-  }
-  if (!state.imageBase64) { alert("Önce bir fotoğraf seç."); return; }
-  if (!state.selectedStyle) { alert("Bir tarz seç."); return; }
-
-  const resultSection = $("resultSection");
-  const loader = $("loader");
-  const errorText = $("errorText");
-  const resultImage = $("resultImage");
-  const downloadLink = $("downloadLink");
-
-  resultSection.hidden = false;
-  resultImage.hidden = true;
-  downloadLink.hidden = true;
-  errorText.hidden = true;
-  loader.hidden = false;
-  $("resultTitle").textContent = `${state.selectedStyle.label} tarzı oluşturuluyor...`;
-  $("generateBtn").disabled = true;
-
-  const measures = {
-    w: parseFloat($("mWidth").value) || null,
-    l: parseFloat($("mLength").value) || null,
-    h: parseFloat($("mHeight").value) || null,
+// 2. Dokunma / Sürükleme Mantığı (Mobil Uyumlu Touch Events)
+function getCanvasCoords(e) {
+  const rect = roomCanvas.getBoundingClientRect();
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  return {
+    x: clientX - rect.left,
+    y: clientY - rect.top
   };
+}
 
-  let prompt = state.selectedStyle.prompt;
-  if (measures.w && measures.l && measures.h) {
-    prompt += `, room dimensions approximately ${measures.w}m by ${measures.l}m, ceiling ${measures.h}m`;
-  }
+function handleStart(e) {
+  const pos = getCanvasCoords(e);
+  selectedItem = null;
 
-  try {
-    const imageUrl = await window.Replicate.run(
-      apiKey,
-      state.imageBase64,
-      prompt,
-      (status) => {
-        $("resultTitle").textContent = `${state.selectedStyle.label} — ${status}`;
-      }
-    );
-    loader.hidden = true;
-    resultImage.src = imageUrl;
-    resultImage.hidden = false;
-    downloadLink.href = imageUrl;
-    downloadLink.hidden = false;
-    $("resultTitle").textContent = `${state.selectedStyle.label} tarzı`;
-    resultSection.scrollIntoView({ behavior: "smooth" });
-  } catch (e) {
-    loader.hidden = true;
-    errorText.textContent = e.message || "Bir hata oluştu.";
-    errorText.hidden = false;
-    $("resultTitle").textContent = "Hata";
-  } finally {
-    $("generateBtn").disabled = false;
+  // Tıklanan noktadaki eşyayı seç (üstteki eşyadan başla)
+  for (let i = items.length - 1; i >= 0; i--) {
+    const it = items[i];
+    if (pos.x >= it.x && pos.x <= it.x + it.w && pos.y >= it.y && pos.y <= it.y + it.h) {
+      selectedItem = it;
+      isDragging = true;
+      dragStartX = pos.x - it.x;
+      dragStartY = pos.y - it.y;
+      break;
+    }
   }
+  render();
+}
+
+function handleMove(e) {
+  if (!isDragging || !selectedItem) return;
+  e.preventDefault();
+  const pos = getCanvasCoords(e);
+  selectedItem.x = pos.x - dragStartX;
+  selectedItem.y = pos.y - dragStartY;
+  render();
+}
+
+function handleEnd() {
+  isDragging = false;
+}
+
+roomCanvas.addEventListener("mousedown", handleStart);
+roomCanvas.addEventListener("mousemove", handleMove);
+roomCanvas.addEventListener("mouseup", handleEnd);
+
+roomCanvas.addEventListener("touchstart", handleStart, { passive: false });
+roomCanvas.addEventListener("touchmove", handleMove, { passive: false });
+roomCanvas.addEventListener("touchend", handleEnd);
+
+// 3. Eşya Ekleme & Akıllı Düzenleme
+$("addFurnitureBtn").addEventListener("click", () => {
+  // Test amaçlı kestiğimiz temsili nesneyi ekler (Gelecekte Segmentasyon modeli bağlayacağız)
+  if (!bgImage) return;
+  const newItem = {
+    img: bgImage,
+    x: roomCanvas.width / 4,
+    y: roomCanvas.height / 3,
+    w: roomCanvas.width / 2,
+    h: roomCanvas.height / 3
+  };
+  items.push(newItem);
+  selectedItem = newItem;
+  render();
+});
+
+$("autoLayoutBtn").addEventListener("click", () => {
+  // Eşyaları odanın alt/zemin kısmına perspektife göre diler
+  if (items.length === 0) return;
+  items.forEach((item, index) => {
+    item.x = 20 + (index * 40);
+    item.y = roomCanvas.height - item.h - 20;
+  });
+  render();
+});
+
+$("clearBtn").addEventListener("click", () => {
+  items = [];
+  selectedItem = null;
+  render();
+});
+
+$("downloadCanvasBtn").addEventListener("click", () => {
+  const link = document.createElement("a");
+  link.download = "oda-tasarimi.png";
+  link.href = roomCanvas.toDataURL("image/png");
+  link.click();
 });
