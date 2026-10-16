@@ -323,3 +323,25 @@ dialog menu {
 dialog menu button { width: auto; padding: 10px 18px; border-radius: 10px; font-size: 14px; font-weight: 600; border: none; cursor: pointer; }
 button.primary-small { background: var(--accent); color: #FFF; }
 button.ghost-small { background: transparent; color: var(--text-muted); border: 1px solid #E0D7C8; }
+
+/* --- Odaly eklemeleri --- */
+.style-chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+.tab {
+  flex: 1; padding: 10px 6px; border-radius: 12px; border: 1px solid #E0D7C8;
+  background: #fff; color: var(--text-muted); font: 600 14px 'Inter', sans-serif; cursor: pointer;
+}
+.tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.hint { margin: 8px 0 0; color: var(--text-muted); font-size: 13px; text-align: center; }
+.slider-box { margin-top: 12px; display: grid; gap: 6px; font-size: 13px; color: var(--text-muted); }
+.slider-box input[type=range], .compare input[type=range] { width: 100%; accent-color: var(--accent); }
+#previewCanvas { width: 100%; height: auto; display: block; border-radius: 12px; }
+.compare { position: relative; margin-top: 10px; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+.compare img { display: block; width: 100%; height: auto; margin: 0; border-radius: 0; box-shadow: none; }
+.compare #resultImage { position: absolute; inset: 0; margin: 0; height: 100%; object-fit: cover; }
+.compare #beforeImage { object-fit: cover; }
+.compare input[type=range] { position: absolute; left: 0; right: 0; bottom: 8px; width: calc(100% - 24px); margin: 0 12px; }
+.loader[hidden], [hidden] { display: none !important; }
+.foot { text-align: center; padding: 0 0 30px; font-size: 13px; color: var(--text-muted); }
+.foot a { color: var(--accent); }
+.action-section .hint { margin-top: 10px; }

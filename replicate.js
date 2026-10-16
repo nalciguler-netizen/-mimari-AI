@@ -1,56 +1,45 @@
+// Replicate'e doğrudan değil, Cloudflare Worker üzerinden gider (anahtar sunucuda gizli kalır).
 window.Replicate = (function () {
-  const MODEL_OWNER = "linncharm";
-  const MODEL_NAME = "archybase";
+  const base = () => (window.ODALY_API || "").replace(/\/$/, "");
 
-  async function run(apiKey, imageBase64, prompt, onProgress) {
-    const res = await fetch(
-      `https://api.replicate.com/v1/models/${MODEL_OWNER}/${MODEL_NAME}/predictions`,
-      {
-        method: "POST",
-        headers: {
-          "Authorization": `Token ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          input: {
-            image: `data:image/jpeg;base64,${imageBase64}`,
-            prompt: prompt,
-          },
-        }),
-      }
-    );
-
-    if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(`API hatası ${res.status}: ${errText}`);
-    }
-
-    let prediction = await res.json();
-    const pollUrl = prediction.urls && prediction.urls.get;
-    if (!pollUrl) throw new Error("Poll URL alınamadı.");
-
-    const maxTries = 90;
-    for (let i = 0; i < maxTries; i++) {
-      await new Promise((r) => setTimeout(r, 2000));
-      const poll = await fetch(pollUrl, {
-        headers: { "Authorization": `Token ${apiKey}` },
-      });
-      prediction = await poll.json();
-
-      if (onProgress) onProgress(prediction.status);
-
-      if (prediction.status === "succeeded") {
-        const out = prediction.output;
-        const url = Array.isArray(out) ? out[0] : out;
-        if (!url) throw new Error("Model çıktı vermedi.");
-        return url;
-      }
-      if (prediction.status === "failed" || prediction.status === "canceled") {
-        throw new Error(prediction.error || "Model hata verdi.");
-      }
-    }
-    throw new Error("Zaman aşımı.");
+  async function net(p) {
+    try { return await p; } catch (e) { throw new Error("Bağlantı kurulamadı. İnternetinizi kontrol edin."); }
   }
 
-  return { run };
+  async function quota() {
+    try {
+      const j = await (await fetch(base() + "/api/quota")).json();
+      return j.left == null ? null : j;
+    } catch (e) { return null; }
+  }
+
+  async function json(res) {
+    let data = {};
+    try { data = await res.json(); } catch (e) {}
+    if (!res.ok) throw new Error(data.error || `Sunucu hatası ${res.status}`);
+    return data;
+  }
+
+  async function run(imageDataUrl, prompt, strength, onProgress) {
+    const start = await json(await net(fetch(base() + "/api/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ image: imageDataUrl, prompt, strength }),
+    })));
+    for (let i = 0; i < 90; i++) {
+      await new Promise((r) => setTimeout(r, 2000));
+      const st = await json(await net(fetch(base() + "/api/status/" + start.id)));
+      if (onProgress) onProgress(st.status);
+      if (st.status === "succeeded") {
+        if (!st.output) throw new Error("Model çıktı vermedi.");
+        return st.output;
+      }
+      if (st.status === "failed" || st.status === "canceled") {
+        throw new Error(st.error || "Tasarım üretilemedi.");
+      }
+    }
+    throw new Error("Zaman aşımı, tekrar deneyin.");
+  }
+
+  return { run, quota };
 })();
