@@ -1,4 +1,5 @@
-// Worker adresi: Cloudflare'de Worker'ı yayınlayınca buraya yazın.
-window.ODALY_API = "https://odaly-api.WORKERHESABI.workers.dev";
+
+// Worker adresi (Cloudflare)
+window.ODALY_API = "https://odaly-api.yolhava-destek.workers.dev";
 // Gizlilik ve şartlar sayfalarında görünecek iletişim e-postası.
-window.ODALY_CONTACT = "iletisim@ornek.com";
+window.ODALY_CONTACT = "yolhava.destek@gmail.com";
