@@ -22,3 +22,4 @@ Model görüntüden görüntü üretir; eşyaları gerçekten taşımaz, istemle
 - Model `adirik/interior-design` kodu MIT lisanslıdır; temel model (Realistic Vision) ve ControlNet'lerin kendi lisansları vardır. Mağazaya çıkmadan önce bu lisansların ticari kullanıma izin verdiğini sahiplerinin sayfalarından doğrulayın.
 - Ücretli abonelik/kredi için Google Play Faturalandırma ayrıca eklenmelidir; şimdilik yalnızca günlük ücretsiz hak (Worker'daki `DAILY_LIMIT`) vardır.
   
+   
