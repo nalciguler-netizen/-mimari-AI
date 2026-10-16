@@ -345,3 +345,4 @@ button.ghost-small { background: transparent; color: var(--text-muted); border: 
 .foot { text-align: center; padding: 0 0 30px; font-size: 13px; color: var(--text-muted); }
 .foot a { color: var(--accent); }
 .action-section .hint { margin-top: 10px; }
+#cameraBtn { width: 100%; margin-top: 10px; }

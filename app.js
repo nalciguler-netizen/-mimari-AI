@@ -22,6 +22,10 @@ $("sourceTabs").addEventListener("click", (e) => {
   [...$("sourceTabs").children].forEach((b) => b.classList.toggle("active", b === btn));
   $("fileInput").accept = state.mode === "video" ? "video/*" : "image/*";
   $("fileInput").value = "";
+  $("cameraInput").accept = state.mode === "video" ? "video/*" : "image/*";
+  $("cameraInput").value = "";
+  $("cameraBtn").hidden = state.mode === "pano";
+  $("cameraBtn").textContent = state.mode === "video" ? "Kamerayla video çek" : "Kamerayla çek";
   $("uploadText").textContent = MODE_TEXT[state.mode];
   resetSource();
 });
@@ -36,12 +40,15 @@ function resetSource() {
 }
 
 /* ---------- Dosya yükleme ---------- */
-$("fileInput").addEventListener("change", (e) => {
+function onFilePicked(e) {
   const file = e.target.files[0];
   if (!file) return;
   if (state.mode === "video") loadVideo(file);
   else loadImage(file);
-});
+}
+$("fileInput").addEventListener("change", onFilePicked);
+$("cameraInput").addEventListener("change", onFilePicked);
+$("cameraBtn").addEventListener("click", () => $("cameraInput").click());
 
 function loadImage(file) {
   const url = URL.createObjectURL(file);
