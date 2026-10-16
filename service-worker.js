@@ -1,4 +1,4 @@
-const CACHE = "odaly-v3";
+const CACHE = "odaly-v4";
 const ASSETS = [
   "./", "./index.html", "./style.css", "./app.js", "./replicate.js",
   "./styles-catalog.js", "./config.js", "./gizlilik.html", "./sartlar.html", "./manifest.json", "./icon-192.png", "./icon-512.png",
@@ -19,7 +19,7 @@ self.addEventListener("activate", (e) => {
 // Önce ağ, olmazsa önbellek (güncellemeler hemen görünsün). API istekleri hiç önbelleğe alınmaz.
 self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
-  if (e.request.method !== "GET" || url.origin !== location.origin) return;
+  if (e.request.method !== "GET" || url.origin !== location.origin || url.pathname.startsWith("/api/")) return;
   e.respondWith(
     fetch(e.request)
       .then((res) => {

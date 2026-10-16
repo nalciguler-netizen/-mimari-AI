@@ -1,0 +1,10 @@
+{
+  "name": "odaly-api",
+  "main": "_worker.js",
+  "compatibility_date": "2026-10-01",
+  "assets": { "directory": "./", "binding": "ASSETS" },
+  "ai": { "binding": "AI" },
+  "kv_namespaces": [
+    { "binding": "LIMITS", "id": "b1a7cb47583f49d1b06d8e0aad83d303" }
+  ]
+}
