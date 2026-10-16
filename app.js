@@ -177,22 +177,18 @@ function updateGenerate() {
 }
 
 /* ---------- Üretim ---------- */
-const STATUS_TR = {
-  starting: "Hazırlanıyor…",
-  processing: "Tasarlanıyor…",
-};
-
 $("generateBtn").addEventListener("click", async () => {
   const style = window.STYLES.find((s) => s.id === state.styleId);
   if (!style) return;
 
   const work = document.createElement("canvas");
-  if (!drawSource(work, 1024)) return;
+  if (!drawSource(work, 512)) return;
   const dataUrl = work.toDataURL("image/jpeg", 0.85);
+  const size = { width: work.width, height: work.height };
 
   const prompt =
-    `${style.prompt}, redesigned room interior, keep the existing furniture pieces, ` +
-    `rearranged into the best possible layout, same walls windows and doors, photorealistic`;
+    `${style.prompt}, redesigned room interior, same room layout, same walls windows and doors, ` +
+    `well arranged furniture, photorealistic`;
 
   state.busy = true;
   updateGenerate();
@@ -201,13 +197,11 @@ $("generateBtn").addEventListener("click", async () => {
   $("compare").hidden = true;
   $("downloadLink").hidden = true;
   hideError();
-  setStatus("Hazırlanıyor…");
+  setStatus("Tasarlanıyor… (20-40 saniye sürebilir)");
   $("resultSection").scrollIntoView({ behavior: "smooth" });
 
   try {
-    const url = await window.Replicate.run(dataUrl, prompt, state.strength, (s) =>
-      setStatus(STATUS_TR[s] || "Tasarlanıyor…")
-    );
+    const url = await window.Replicate.run(dataUrl, prompt, state.strength, size);
     await showResult(dataUrl, url);
     refreshQuota();
   } catch (err) {
