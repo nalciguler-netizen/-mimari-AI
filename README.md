@@ -21,5 +21,5 @@ Model görüntüden görüntü üretir; eşyaları gerçekten taşımaz, istemle
 - `gizlilik.html` ve `sartlar.html` hazır; `config.js` içindeki `ODALY_CONTACT` adresini kendi e-postanızla değiştirin. Google Play'de gizlilik politikası adresi olarak `https://KULLANICI.github.io/REPO/gizlilik.html` girilir.
 - Model `adirik/interior-design` kodu MIT lisanslıdır; temel model (Realistic Vision) ve ControlNet'lerin kendi lisansları vardır. Mağazaya çıkmadan önce bu lisansların ticari kullanıma izin verdiğini sahiplerinin sayfalarından doğrulayın.
 - Ücretli abonelik/kredi için Google Play Faturalandırma ayrıca eklenmelidir; şimdilik yalnızca günlük ücretsiz hak (Worker'daki `DAILY_LIMIT`) vardır.
-  
-   
+    
+    
