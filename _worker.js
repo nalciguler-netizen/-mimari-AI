@@ -88,7 +88,13 @@ const api = {
       const capacity = (m) => /429|3040|capacity|neuron|limit|quota/i.test(m);
       const makeBody = (withSize) => {
         const form = new FormData();
-        form.append("prompt", `Redecorate and rearrange the room shown in image 0. ${prompt}`);
+        const keep =
+          strength < 0.55
+            ? "Keep exactly the same room: same camera angle, walls, windows, doors, floor and ALL furniture in the same positions, shapes and colors. Only add subtle decor, cushions, lighting and accessories."
+            : strength < 0.75
+            ? "Keep the exact same room architecture, camera angle, windows, doors and curtains positions, and keep every existing furniture piece with the same shape, color and position. Do not add or remove furniture. Only restyle wall color, textiles, lighting and decor."
+            : "Keep the same room architecture, camera angle, windows and doors. Keep the existing furniture pieces but you may rearrange them and restyle colors and decor.";
+        form.append("prompt", `Edit image 0 as an interior designer. ${keep} Style: ${prompt}`);
         form.append("input_image_0", new Blob([imgBytes], { type: "image/jpeg" }));
         if (withSize) {
           form.append("width", String(width));
