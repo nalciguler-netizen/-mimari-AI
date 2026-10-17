@@ -2,7 +2,7 @@
 // Gerekli bağlama (Binding): AI (Workers AI)
 // İsteğe bağlı: KV bağlaması LIMITS, değişken DAILY_LIMIT (varsayılan 10), ALLOWED_ORIGIN
 
-const MODEL = "@cf/stabilityai/stable-diffusion-xl-base-1.0";
+const MODEL = "@cf/black-forest-labs/flux-2-klein-4b";
 const NEGATIVE =
   "lowres, watermark, text, logo, deformed, blurry, distorted walls, extra furniture, people";
 
@@ -85,20 +85,23 @@ const api = {
       const imgBytes = new Uint8Array(bin.length);
       for (let i = 0; i < bin.length; i++) imgBytes[i] = bin.charCodeAt(i);
 
-      const base = {
-        prompt,
-        negative_prompt: NEGATIVE,
-        image: [...imgBytes],
-        strength,
-        guidance: 8,
-        num_steps: 20,
-      };
       const capacity = (m) => /429|3040|capacity|neuron|limit|quota/i.test(m);
+      const makeBody = (withSize) => {
+        const form = new FormData();
+        form.append("prompt", `Redecorate and rearrange the room shown in image 0. ${prompt}`);
+        form.append("input_image_0", new Blob([imgBytes], { type: "image/jpeg" }));
+        if (withSize) {
+          form.append("width", String(width));
+          form.append("height", String(height));
+        }
+        const r = new Response(form);
+        return { multipart: { body: r.body, contentType: r.headers.get("content-type") } };
+      };
 
       let out, lastErr = "";
-      for (const extra of [{ width, height }, {}]) {
+      for (const withSize of [true, false]) {
         try {
-          out = await env.AI.run(MODEL, { ...base, ...extra });
+          out = await env.AI.run(MODEL, makeBody(withSize));
           break;
         } catch (e) {
           lastErr = String((e && e.message) || e);
@@ -115,10 +118,17 @@ const api = {
       }
 
       try {
-        const bytes = new Uint8Array(await new Response(out).arrayBuffer());
-        if (!bytes.length) throw new Error("boş çıktı");
+        let b64;
+        if (out && typeof out.image === "string") {
+          b64 = out.image;
+        } else {
+          const bytes = new Uint8Array(await new Response(out).arrayBuffer());
+          if (!bytes.length) throw new Error("boş çıktı");
+          b64 = toBase64(bytes);
+        }
+        const mime = b64.startsWith("/9j/") ? "image/jpeg" : "image/png";
         return reply({
-          output: "data:image/png;base64," + toBase64(bytes),
+          output: `data:${mime};base64,` + b64,
           left: env.LIMITS ? Math.max(0, max - used - 1) : null,
         });
       } catch (e) {
