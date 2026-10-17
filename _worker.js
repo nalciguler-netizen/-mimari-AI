@@ -42,7 +42,7 @@ const api = {
     if (allowed !== "*" && origin !== allowed) return reply({ error: "İzin yok." }, 403);
 
     const url = new URL(request.url);
-    const max = Number(env.DAILY_LIMIT) || 10;
+    const max = Number(env.DAILY_LIMIT) || 30;
 
     if (request.method === "GET" && url.pathname === "/api/quota") {
       if (!env.LIMITS) return reply({ left: null, max });
