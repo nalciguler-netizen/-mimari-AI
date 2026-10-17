@@ -239,6 +239,23 @@ function applyCompare() {
 }
 $("compareSlider").addEventListener("input", applyCompare);
 
+/* ---------- Temizle ---------- */
+$("clearBtn").addEventListener("click", () => {
+  if (state.busy) return;
+  state.styleId = null;
+  [...$("styleGrid").children].forEach((c) => c.classList.remove("active"));
+  $("fileInput").value = "";
+  $("cameraInput").value = "";
+  resetSource();
+  $("resultSection").hidden = true;
+  $("compare").hidden = true;
+  $("downloadLink").hidden = true;
+  $("loader").hidden = true;
+  $("statusText").hidden = true;
+  hideError();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
+
 /* ---------- Mesajlar ---------- */
 function setStatus(t) { $("statusText").textContent = t; $("statusText").hidden = false; }
 function showError(t) {
