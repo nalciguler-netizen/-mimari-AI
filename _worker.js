@@ -2,7 +2,7 @@
 // Gerekli bağlama (Binding): AI (Workers AI)
 // İsteğe bağlı: KV bağlaması LIMITS, değişken DAILY_LIMIT (varsayılan 10), ALLOWED_ORIGIN
 
-const MODEL = "@cf/runwayml/stable-diffusion-v1-5-img2img";
+const MODEL = "@cf/stabilityai/stable-diffusion-xl-base-1.0";
 const NEGATIVE =
   "lowres, watermark, text, logo, deformed, blurry, distorted walls, extra furniture, people";
 
